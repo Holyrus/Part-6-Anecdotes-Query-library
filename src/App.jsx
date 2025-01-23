@@ -1,19 +1,48 @@
 import AnecdoteForm from './components/AnecdoteForm'
 import Notification from './components/Notification'
 
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getAnecdotes, updateAnecdote } from './requests'
+
 const App = () => {
 
+  const queryClient = useQueryClient()
+
+  const updateAnecdoteMutation = useMutation({
+    mutationFn: updateAnecdote,
+    // onSuccess: () => {
+    //   queryClient.invalidateQueries({ queryKey: ['anecdotes'] })
+    // }
+
+    onSuccess: (updatedAnecdote) => {
+      queryClient.setQueryData(['anecdotes'], (oldData) => {
+        console.log(oldData)
+        return oldData.map(anecdote => anecdote.id === updatedAnecdote.id ? updatedAnecdote : anecdote)
+      })
+    }
+  })
+
   const handleVote = (anecdote) => {
-    console.log('vote')
+    updateAnecdoteMutation.mutate({...anecdote, votes: anecdote.votes + 1})
   }
 
-  const anecdotes = [
-    {
-      "content": "If it hurts, do it more often",
-      "id": "47145",
-      "votes": 0
-    },
-  ]
+  const result = useQuery({
+    queryKey: ['anecdotes'],
+    queryFn: getAnecdotes,
+    refetchOnWindowFocus: false, //Preventing to reupdate the render every window focus. It causes more unnecesary rerenders.
+    // retry: false, //Preventing to retrying fetching the DB if it didn't loaded it for the first time.
+    // retry: 1, // You can specifiy the number of retries fetching the DB. Default: 3 times.
+  })
+
+  console.log(JSON.parse(JSON.stringify(result)))
+
+  if (result.isLoading) {
+    return <div>Loading data...</div>
+  } else if (result.status === 'error') {
+    return <div>Anecdote service not available due to problems in server</div>
+  }
+
+  const anecdotes = result.data
 
   return (
     <div>
