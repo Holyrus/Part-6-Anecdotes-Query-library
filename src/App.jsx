@@ -4,7 +4,21 @@ import Notification from './components/Notification'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getAnecdotes, updateAnecdote } from './requests'
 
+import { useNotificationDispatch } from './components/NotificationContext'
+
 const App = () => {
+
+  const dispatch = useNotificationDispatch()
+
+  const handleVoteButtonClick = (anecdote) => {
+    handleVote(anecdote)
+    dispatch({ type: "VOTE", payload: `You voted for ${anecdote.content}`})
+    setTimeout(() => {
+      dispatch({ type: "CLEAR"})
+    }, 5000)
+  }
+
+  // -----------------------------------------------------------
 
   const queryClient = useQueryClient()
 
@@ -44,6 +58,8 @@ const App = () => {
 
   const anecdotes = result.data
 
+  // ---------------------------------------------------------
+
   return (
     <div>
       <h3>Anecdote app</h3>
@@ -58,7 +74,8 @@ const App = () => {
           </div>
           <div>
             has {anecdote.votes}
-            <button onClick={() => handleVote(anecdote)}>vote</button>
+            {/* <button onClick={() => handleVote(anecdote)}>vote</button> */}
+            <button onClick={() => handleVoteButtonClick(anecdote)}>vote</button>
           </div>
         </div>
       )}
